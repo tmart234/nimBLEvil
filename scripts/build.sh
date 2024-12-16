@@ -28,11 +28,8 @@ repository.apache-mynewt-nimble:
     repo: mynewt-nimble
     repository.defrepo.depth: 1
 
-repository.ignore:
-    - "*"
-
 # Disable all other repositories
-project.ignore_repos:
+project.ignore_repos::
     - mcuboot
     - apache-mynewt-mcumgr
     - tinyusb
@@ -75,6 +72,14 @@ project.ignore_repos:
     - stm-cmsis_device_f0
     - stm-stm32f0xx_hal_driver
     - cirruslogic-mcu-drivers
+
+project.deps:
+    - "@apache-mynewt-core/hw/bsp/nordic_pca10040"
+    - "@apache-mynewt-core/kernel/os"
+    - "@apache-mynewt-core/sys/console"
+    - "@apache-mynewt-core/sys/log"
+    - "@apache-mynewt-nimble/nimble/host"
+    - "@apache-mynewt-nimble/nimble/controller"
 
 EOL
 
