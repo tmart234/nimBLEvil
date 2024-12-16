@@ -28,54 +28,25 @@ repository.apache-mynewt-nimble:
     repo: mynewt-nimble
     repository.defrepo.depth: 1
 
-# Ignore all repositories except what we need for nRF52
-project.ignore_repos:
-    - mcuboot
-    - apache-mynewt-mcumgr
-    - tinyusb
-    - mbedtls
-    - arm-CMSIS_5
-    - littlefs
-    - liblc3
-    - libsamplerate
-    - lvgl
-    - eembc-coremark
-    - blues-note-c
-    - atmel-samd21xx
-    - nxp-mcux-sdk
-    # STM32 related repos
-    - stm-cmsis_device_f0
-    - stm-stm32f0xx_hal_driver
-    - stm-cmsis_device_f1
-    - stm-stm32f1xx_hal_driver
-    - stm-cmsis_device_f3
-    - stm-stm32f3xx_hal_driver
-    - stm-cmsis_device_f4
-    - stm-stm32f4xx_hal_driver
-    - stm-cmsis_device_f7
-    - stm-stm32f7xx_hal_driver
-    - stm-cmsis_device_g0
-    - stm-stm32g0xx_hal_driver
-    - stm-cmsis_device_g4
-    - stm-stm32g4xx_hal_driver
-    - stm-cmsis_device_h7
-    - stm-stm32h7xx_hal_driver
-    - stm-cmsis_device_l0
-    - stm-stm32l0xx_hal_driver
-    - stm-cmsis_device_l1
-    - stm-stm32l1xx_hal_driver
-    - stm-cmsis_device_l4
-    - stm-stm32l4xx_hal_driver
-    - stm-cmsis_device_u5
-    - stm-stm32u5xx_hal_driver
-    - stm-cmsis_device_wb
-    - stm-stm32wbxx_hal_driver
-    - cirruslogic-mcu-drivers
+# Nordic HAL
+repository.nordic-nrfx:
+    type: github
+    vers: 0-latest
+    user: NordicSemiconductor
+    repo: nrfx
+    repository.defrepo.depth: 1
+
+# Disable all other repositories
+repository.ignore:
+    - "*"
+    - "!apache-mynewt-core"
+    - "!apache-mynewt-nimble"
+    - "!nordic-nrfx"
 
 EOL
 
 # Initialize project
-newt upgrade -f
+newt upgrade -f -v
 
 # Create required directories
 mkdir -p apps/numBLEvil
