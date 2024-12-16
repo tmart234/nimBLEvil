@@ -83,7 +83,6 @@ EOL
 # Create syscfg.yml
 cat > apps/numBLEvil/syscfg.yml << 'EOL'
 syscfg.vals:
-    BLE_CONTROLLER: 1
     BLE_HCI_VS_ENABLE: 1
     BLE_LL_CFG_FEAT_LE_ENCRYPTION: 0
     BLE_LL_RAW_PACKET_ENABLE: 1
