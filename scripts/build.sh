@@ -28,6 +28,8 @@ repository.apache-mynewt-nimble:
     repo: mynewt-nimble
     repository.defrepo.depth: 1
 
+repository.ignore:
+    - "*"
 
 # Disable all other repositories
 project.ignore_repos:
@@ -260,7 +262,6 @@ cat > apps/numBLEvil/src/main.c << 'EOL'
 #include "host/ble_gatt.h"
 #include "controller/ble_ll.h"
 #include "host/ble_hs_custom.h"
-#include "host/util/util.h"
 #include "console/console.h"
 
 // Device info
