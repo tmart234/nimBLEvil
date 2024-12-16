@@ -131,6 +131,8 @@ syscfg.vals:
     BLE_HCI_UART_FLOW_CTRL: 0
     BLE_CUSTOM_VS_CMDS: 1
     BLE_RAW_PACKET_TX: 1
+    BLE_HOST_TASK_PRIO: 1
+    BLE_HOST_STACK_SIZE: 256
 EOL
 
 # Patch NimBLE with custom modifications
@@ -260,18 +262,26 @@ cp ${NIMBLE_PATH}/nimble/controller/src/ble_ll.c ${NIMBLE_PATH}/nimble/controlle
 
 # Create main.c with proper initialization
 cat > apps/numBLEvil/src/main.c << 'EOL'
+#include <assert.h>
+#include <string.h>
 #include "sysinit/sysinit.h"
 #include "os/os.h"
 #include "host/ble_hs.h"
 #include "host/ble_gap.h"
 #include "host/ble_gatt.h"
-#include "controller/ble_ll.h"
+#include "host/ble_l2cap.h"
+#include "host/ble_hs_hci.h"
 #include "host/ble_hs_custom.h"
+#include "controller/ble_ll.h"
 #include "console/console.h"
 
 // Device info
 static const char *device_name = "numBLEvil";
 static uint8_t own_addr_type;
+
+// Host task definitions
+static struct os_task host_task_struct;
+static os_stack_t host_task_stack[OS_STACK_ALIGN(256)];
 
 // Connection handle for central mode
 static uint16_t conn_handle;
@@ -383,43 +393,64 @@ ble_on_reset(int reason)
     console_printf("Resetting state; reason=%d\n", reason);
 }
 
-void
-ble_host_task(void *param)
-{
-    ble_hs_cfg.sync_cb = ble_on_sync;
-    ble_hs_cfg.reset_cb = ble_on_reset;
-    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
-
-    // Initialize custom commands
-    ble_ll_custom_init();
-
-    while (1) {
-        os_eventq_run(os_eventq_dflt_get());
-    }
-}
-
 // Console command handler for Python framework interface
 static int
-cmd_handler(int argc, char **argv)
+console_rx_cb(int full_line)
 {
-    if (argc < 2) {
+    int rc;
+    char buf[32];
+    int count = console_read(buf, sizeof(buf) - 1);
+    if (count <= 0) {
         return 0;
     }
+    buf[count] = '\0';
 
-    if (!strcmp(argv[1], "adv")) {
+    // Parse command
+    if (!strncmp(buf, "adv", 3)) {
         start_advertising();
-    } else if (!strcmp(argv[1], "scan")) {
+    } else if (!strncmp(buf, "scan", 4)) {
         start_scanning();
-    } else if (!strcmp(argv[1], "stop")) {
+    } else if (!strncmp(buf, "stop", 4)) {
         if (is_connected) {
             ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
         } else {
             ble_gap_disc_cancel();
             ble_gap_adv_stop();
         }
+    } else if (!strncmp(buf, "raw", 3)) {
+        // Enable raw mode for link layer packets
+        uint8_t cmd[] = {0x01, 0x01};  // Enable raw mode with CRC disabled
+        rc = ble_hs_hci_cmd_tx(BLE_HCI_OCF_RAW_MODE, cmd, sizeof(cmd), NULL, 0);
+        if (rc == 0) {
+            console_printf("Raw mode enabled\n");
+        } else {
+            console_printf("Failed to enable raw mode: %d\n", rc);
+        }
     }
 
     return 0;
+}
+
+void
+ble_host_task(void *param)
+{
+    // Initialize NimBLE host configuration
+    ble_hs_cfg.sync_cb = ble_on_sync;
+    ble_hs_cfg.reset_cb = ble_on_reset;
+    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+
+    // Initialize custom link layer commands
+    ble_ll_custom_init();
+
+    // Enable raw packet transmission support in host layer
+    int rc = ble_hs_hci_cmd_tx(BLE_HCI_OCF_RAW_MODE, NULL, 0, NULL, 0);
+    if (rc != 0) {
+        console_printf("Warning: Failed to initialize raw packet mode\n");
+    }
+
+    while (1) {
+        os_eventq_run(os_eventq_dflt_get());
+    }
 }
 
 int
@@ -429,13 +460,19 @@ main(void)
 
     // Initialize console for Python framework communication
     console_init(NULL);
-    console_register_rx_cb(cmd_handler);
+    console_set_rx_cb(console_rx_cb);
 
-    // Create host task
-    os_task_init(&host_task_struct, "host_task", ble_host_task, NULL,
-                 MYNEWT_VAL(BLE_HOST_TASK_PRIO), OS_WAIT_FOREVER,
-                 host_task_stack, MYNEWT_VAL(BLE_HOST_STACK_SIZE));
+    // Create host task with proper stack size and priority
+    os_task_init(&host_task_struct, 
+                 "host_task", 
+                 ble_host_task, 
+                 NULL,
+                 MYNEWT_VAL(BLE_HOST_TASK_PRIO), 
+                 OS_WAIT_FOREVER,
+                 host_task_stack, 
+                 OS_STACK_ALIGN(MYNEWT_VAL(BLE_HOST_STACK_SIZE)));
 
+    // Start the OS
     while (1) {
         os_eventq_run(os_eventq_dflt_get());
     }
