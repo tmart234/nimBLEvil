@@ -12,7 +12,6 @@ project.name: "numBLEvil"
 project.repositories:
     - apache-mynewt-core
     - apache-mynewt-nimble
-    - nordic-nrfx
 
 repository.apache-mynewt-core:
     type: github
@@ -29,13 +28,6 @@ repository.apache-mynewt-nimble:
     repo: mynewt-nimble
     repository.defrepo.depth: 1
 
-# Nordic HAL
-repository.nordic-nrfx:
-    type: github
-    vers: latest
-    user: NordicSemiconductor
-    repo: nrfx
-    repository.defrepo.depth: 1
 
 # Disable all other repositories
 project.ignore_repos:
