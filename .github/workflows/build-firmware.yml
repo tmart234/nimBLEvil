@@ -1,0 +1,49 @@
+name: Build BLE Fuzzer Firmware
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly builds to check against latest mynewt/nimble
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi
+        sudo apt-get install -y wget git make unzip python3-pip
+        pip3 install mynewt-newt
+
+    - name: Setup Go for newt
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Cache newt packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.newt
+          project.state
+        key: ${{ runner.os }}-newt-${{ hashFiles('project.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-newt-
+
+    - name: Run Build Script
+      run: ./scripts/build.sh
+      
+    - name: Upload Firmware
+      uses: actions/upload-artifact@v3
+      with:
+        name: ble-fuzzer-firmware
+        path: |
+          bin/targets/nrf52_bsp/app/*.hex
+          bin/targets/nrf52_bsp/app/*.elf
