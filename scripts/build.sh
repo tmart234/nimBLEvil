@@ -533,7 +533,7 @@ pkg.author: Tyler M
 pkg.homepage: https://github.com/tmart234
 
 pkg.deps:
-    - "@apache-mynewt-core/hw/bsp/nrf52dk"
+    - "@apache-mynewt-core/hw/bsp/nordic_pca10040"
     - "@apache-mynewt-core/libc/baselibc"
     - "apps/numBLEvil"
 EOL
