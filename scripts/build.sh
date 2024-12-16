@@ -32,7 +32,7 @@ repository.apache-mynewt-nimble:
 # Nordic HAL
 repository.nordic-nrfx:
     type: github
-    vers: 85c444ee0b76272d8a074b82845f04e92b3253c4
+    vers: latest
     user: NordicSemiconductor
     repo: nrfx
     repository.defrepo.depth: 1
