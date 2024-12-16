@@ -37,6 +37,7 @@ newt upgrade -f
 mkdir -p apps/numBLEvil
 mkdir -p targets/nrf52_bsp
 mkdir -p apps/numBLEvil/include/numBLEvil
+mkdir -p apps/numBLEvil/src
 
 NIMBLE_PATH="repos/apache-mynewt-nimble"
 
