@@ -18,16 +18,20 @@ repository.apache-mynewt-core:
     vers: 0-latest
     user: apache
     repo: mynewt-core
+    repository.defrepo.depth: 1
+
 
 repository.apache-mynewt-nimble:
     type: github
     vers: 0-latest
     user: apache
     repo: mynewt-nimble
+    repository.defrepo.depth: 1
+
 EOL
 
 # Initialize project
-newt upgrade
+newt upgrade -f
 
 # Create required directories
 mkdir -p apps/numBLEvil
