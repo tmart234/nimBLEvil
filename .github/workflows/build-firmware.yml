@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly builds to check against latest mynewt/nimble
+    - cron: '0 0 * * 0'  # Weekly builds
 
 jobs:
   build:
@@ -15,29 +15,45 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi
-        sudo apt-get install -y wget git make unzip python3-pip
-        pip3 install mynewt-newt
-
-    - name: Setup Go for newt
+    - name: Setup Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.20'
-
-    - name: Install Newt
+    
+    - name: Install System Dependencies
       run: |
-        go install mynewt.apache.org/newt/newt@latest
-        echo "${HOME}/go/bin" >> $GITHUB_PATH
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi
+        sudo apt-get install -y wget git make unzip
 
-    - name: Verify Newt Installation
+    - name: Install and Build Newt
       run: |
+        # Clone newt repository
+        git clone https://github.com/apache/mynewt-newt.git
+        cd mynewt-newt
+        # Build newt
+        ./build.sh
+        # Install newt
+        sudo mv newt/newt /usr/local/bin
+        cd ..
+        # Verify installation
+        which newt
         newt version
 
+    - name: Cache newt dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.newt
+          project.state
+        key: ${{ runner.os }}-newt-${{ hashFiles('project.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-newt-
+
     - name: Run Build Script
-      run: ./scripts/build.sh
+      run: |
+        chmod +x scripts/build.sh
+        ./scripts/build.sh
       
     - name: Upload Firmware
       uses: actions/upload-artifact@v3
