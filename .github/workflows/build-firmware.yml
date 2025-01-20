@@ -34,9 +34,20 @@ jobs:
 
     - name: Apply Patches
       run: |
+        # Verify patch files first
+        for patch in patches/*.patch; do
+          echo "Checking patch: $patch"
+          git apply --check --ignore-space-change $patch || :
+        done
+        
+        # Apply patches with verbose output
         NIMBLE_VER=$(grep 'apache-mynewt-nimble' src/project.yml | awk -F: '{print $2}')
         for patch in patches/*.patch; do
-          git apply -v --ignore-space-change $patch
+          echo "Applying patch: $patch"
+          git apply -v --ignore-space-change $patch || {
+            echo "Failed to apply $patch"
+            exit 1
+          }
         done
 
     - name: Build Fuzzing Firmware
