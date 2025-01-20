@@ -35,12 +35,7 @@ class NimBLEConnectionManager:
         """
         hdr = struct.pack('<HB', opcode, len(params))
         self.ser.write(b'\x01' + hdr + params)
-        
-    def enable_fuzzing_mode(self):
-        """Enable fuzzing-specific features in the NimBLE stack."""
-        # Enable fuzzing mode with CRC/whitening bypass
-        self.send_hci_command(0xFD01, struct.pack('<BB', 0x01, 0x03))
-        
+         
     def init_connection(self, address, address_type='public'):
         """
         Initialize a BLE connection object.
@@ -88,13 +83,12 @@ class NimBLEConnectionManager:
                     conn['crc_init'] = struct.unpack('<I', pkt[9:13])[0]
                     break
                     
-    def ll_send_raw(self, pkt, disable_crc=True, disable_whiten=True):
+    def ll_send_raw(self, pkt, disable_crc=False, disable_whiten=False):
         """
-        Send a raw link layer packet.
+        Send raw LL packet with per-packet CRC/whitening control.
         
-        :param pkt: Scapy packet (BTLE layer)
-        :param disable_crc: Disable CRC for this packet
-        :param disable_whiten: Disable whitening for this packet
+        :param disable_crc: Disable CRC ONLY for this packet
+        :param disable_whiten: Disable whitening ONLY for this packet
         """
         flags = 0
         flags |= 0x01 if disable_crc else 0
@@ -102,7 +96,7 @@ class NimBLEConnectionManager:
         
         raw_bytes = bytes(pkt)
         params = struct.pack('<BH', flags, len(raw_bytes)) + raw_bytes
-        self.send_hci_command(0xFD01, params)  # Custom LL raw TX opcode
+        self.send_hci_command(0xFD01, params)  # nimBLEvil's Custom LL TX command  # Custom LL raw TX opcode
         
     def l2cap_send_raw(self, conn, pkt):
         """

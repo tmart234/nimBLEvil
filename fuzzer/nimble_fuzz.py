@@ -12,19 +12,13 @@ import random
 
 class NimBLEFuzzer(NimBLEConnectionManager):
     def __init__(self, adapter=0, role='central'):
-        super().__init__(adapter, role)
-        self.enable_fuzzing_mode()
-        
-    def enable_fuzzing_mode(self):
-        """Enable fuzzing-specific features in NimBLE stack."""
-        # Enable fuzzing mode with CRC/whitening bypass
-        self.send_hci_command(0xFD01, struct.pack('<BB', 0x01, 0x03))
+        super().__init__(adapter, role) 
         
     def fuzz_link_layer(self, conn):
         """Fuzz link layer packets with selective CRC/whitening bypass."""
         access_addr = conn['access_addr']
         
-        # Example: Fuzzed LL control packets
+        # Fuzzed LL control packet with CRC/whitening disabled
         fuzzed_ll = self.fuzz_packet(
             BTLE(access_addr=access_addr)/BTLE_DATA()/LL_CONNECTION_UPDATE_IND(
                 win_size=15,
@@ -32,12 +26,8 @@ class NimBLEFuzzer(NimBLEConnectionManager):
             ),
             fuzz_fields={'win_size': random.randint(1, 255), 'timeout': random.randint(10, 500)}
         )
-        self.ll_send_raw(fuzzed_ll, disable_crc=True, disable_whiten=True)
-        
-        # Example: Normal LL packet (retains CRC/whitening)
-        normal_ll = BTLE(access_addr=access_addr)/BTLE_DATA()/LL_PING_REQ()
-        self.ll_send_raw(normal_ll, disable_crc=False, disable_whiten=False)
-        
+        self.ll_send_raw(fuzzed_ll, disable_crc=True, disable_whiten=True) 
+
     def fuzz_l2cap(self, conn):
         """Fuzz L2CAP layer packets."""
         # Fuzzed L2CAP CID
