@@ -1,9 +1,11 @@
 diff --git a/nimble/host/include/host/ble_ll_conn_params.h b/nimble/host/include/host/ble_ll_conn_params.h
 --- a/nimble/host/include/host/ble_ll_conn_params.h
 +++ b/nimble/host/include/host/ble_ll_conn_params.h
-@@ -34,6 +34,8 @@
+@@ -33,7 +33,10 @@
+ #ifndef BLE_LL_CONN_PARAMS_H_
  #define BLE_LL_CONN_PARAMS_H_
  
++/* FUZZING_STATE: Connection parameters */
  extern uint16_t g_ble_ll_conn_params_upd_timeout;
 +extern bool g_ble_ll_conn_fuzz_mode;
  
@@ -11,27 +13,4 @@ diff --git a/nimble/host/include/host/ble_ll_conn_params.h b/nimble/host/include
 +void ble_ll_conn_params_set_limits(uint16_t min_int, uint16_t max_int);
  
  #endif
-
-diff --git a/nimble/host/src/ble_ll_conn_params.c b/nimble/host/src/ble_ll_conn_params.c
---- a/nimble/host/src/ble_ll_conn_params.c
-+++ b/nimble/host/src/ble_ll_conn_params.c
-@@ -34,6 +34,7 @@
- #include "ble_ll_conn_priv.h"
  
- uint16_t g_ble_ll_conn_params_upd_timeout;
-+bool g_ble_ll_conn_fuzz_mode = false;
- 
- static void
- ble_ll_conn_params_exec_update(struct ble_hs_conn *conn)
-@@ -63,6 +64,11 @@
-     struct ble_ll_conn_params *params;
-     int rc;
- 
-+    if (g_ble_ll_conn_fuzz_mode) {
-+        /* Bypass parameter validation */
-+        return 0;
-+    }
-+
-     params = &conn->conn_params;
- 
-     /* Validate connection parameters */

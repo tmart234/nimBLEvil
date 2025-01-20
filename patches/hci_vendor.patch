@@ -1,43 +1,16 @@
 diff --git a/nimble/host/src/ble_hs_hci.c b/nimble/host/src/ble_hs_hci.c
 --- a/nimble/host/src/ble_hs_hci.c
 +++ b/nimble/host/src/ble_hs_hci.c
-@@ -1497,6 +1497,39 @@
+@@ -1496,6 +1496,12 @@
      return 0;
  }
  
-+static int
-+ble_hs_hci_vendor_raw_tx(uint8_t *data, int len)
-+{
-+    int rc;
-+    uint16_t flags;
-+    uint8_t *payload;
-+    size_t payload_len;
-+    
-+    if (len < 3) {
-+        return BLE_HS_EBADDATA;
-+    }
-+    
-+    flags = le16toh(*(uint16_t *)data);
-+    payload = data + 2;
-+    payload_len = len - 2;
-+    
-+    /* Set PHY flags */
-+    g_phy_raw_tx_mode = (flags & 0x01);
-+    g_phy_disable_whiten = (flags & 0x02);
-+    
-+    /* Send raw payload */
-+    struct os_mbuf *txbuf = ble_hci_trans_alloc_buf();
-+    if (!txbuf) return BLE_HS_ENOMEM;
-+    os_mbuf_append(txbuf, payload, payload_len);
-+    rc = ble_phy_tx(txbuf, BLE_PHY_TX_PWR_DBM_0);
-+    
-+    /* Reset PHY flags */
-+    g_phy_raw_tx_mode = false;
-+    g_phy_disable_whiten = false;
-+    
-+    return rc;
-+}
++//// BEGIN FUZZING VENDOR COMMANDS
++static const struct ble_hci_vs_func hci_vs_funcs[] = {
++    { BLE_HCI_RAW_TX_OPCODE, ble_hs_hci_vendor_raw_tx },
++    { 0 }
++};
 +
- int
- ble_hs_hci_cmd_send(uint16_t opcode, const void *cmddata, uint8_t cmddata_len)
+ static int
+ ble_hs_hci_vendor_raw_tx(uint8_t *data, int len)
  {

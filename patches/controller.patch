@@ -1,35 +1,19 @@
 diff --git a/nimble/controller/src/ble_phy.c b/nimble/controller/src/ble_phy.c
 --- a/nimble/controller/src/ble_phy.c
 +++ b/nimble/controller/src/ble_phy.c
-@@ -42,6 +42,9 @@
+@@ -268,6 +268,7 @@
+     g_ble_phy_data.whitener_initial_value = initial_value;
+ }
  
- static struct ble_phy_preempt_entry preempt_tx[MYNEWT_VAL(BLE_PHY_PREEMPT_TX_MAX)];
- 
-+static bool g_phy_raw_tx_mode = false;
-+static bool g_phy_disable_whiten = false;
-+
- static void
- ble_phy_hw_set_txpower(int dbm)
- {
-@@ -271,6 +274,10 @@
++/* FUZZING_HOOK: Whitening bypass */
  void
  ble_phy_whiten(uint8_t *payload, uint8_t len)
  {
-+    if (g_phy_disable_whiten) {
-+        return;
-+    }
-+
-     uint32_t lfsr = g_ble_phy_data.whitener_initial_value;
-     uint8_t i;
+@@ -289,6 +290,7 @@
+     }
+ }
  
-@@ -292,6 +299,10 @@
++/* FUZZING_HOOK: CRC override */
  uint32_t
  ble_phy_crc(const uint8_t *d, int len)
  {
-+    if (g_phy_raw_tx_mode) {
-+        return 0xFFFFFFFF;
-+    }
-+
-     uint32_t crc;
-     uint32_t r;
-     int i, j;

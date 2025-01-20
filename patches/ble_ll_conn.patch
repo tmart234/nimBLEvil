@@ -1,24 +1,23 @@
 diff --git a/nimble/controller/src/ble_ll_conn.c b/nimble/controller/src/ble_ll_conn.c
 --- a/nimble/controller/src/ble_ll_conn.c
 +++ b/nimble/controller/src/ble_ll_conn.c
-@@ -35,6 +35,8 @@
- #include "ble_ll_conn_priv.h"
- #include "ble_ll_hci_priv.h"
- 
-+extern bool g_phy_raw_tx_mode;  // From ble_phy.c
-+
- static struct ble_ll_conn_sm g_ble_ll_conn_sm_pool[MYNEWT_VAL(BLE_LL_MAX_CONNECTIONS)];
- static struct os_mempool g_ble_ll_conn_sm_pool_mem;
- 
-@@ -2138,6 +2140,11 @@
+@@ -2136,6 +2136,7 @@
+ int
+ ble_ll_conn_sm_get_tx(struct ble_ll_conn_sm *connsm)
+ {
++    /* FUZZING_HOOK: Bypass connection checks */
      struct ble_ll_conn_sm *connsm;
      int rc;
  
+@@ -2143,6 +2144,10 @@
+         return 0;
+     }
+ 
 +    if (g_phy_raw_tx_mode) {
-+        /* Bypass connection state checks */
-+        return 0;
++        return 0;  // Bypass state checks
 +    }
 +
+     /* Original implementation continues... */
      /* Get connection state machine */
      connsm = ble_ll_conn_get_connsm(conn_handle);
      if (!connsm) {

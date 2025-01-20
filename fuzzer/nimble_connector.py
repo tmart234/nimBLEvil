@@ -91,24 +91,18 @@ class NimBLEConnectionManager:
         :param disable_whiten: Disable whitening ONLY for this packet
         """
         flags = 0
-        flags |= 0x01 if disable_crc else 0
-        flags |= 0x02 if disable_whiten else 0
+        flags |= 0x01 * disable_crc
+        flags |= 0x02 * disable_whiten
         
-        raw_bytes = bytes(pkt)
-        params = struct.pack('<BH', flags, len(raw_bytes)) + raw_bytes
-        self.send_hci_command(0xFD01, params)  # nimBLEvil's Custom LL TX command  # Custom LL raw TX opcode
-        
+        # Single-packet override (no persistent state)
+        params = struct.pack('<BH', flags, len(pkt)) + bytes(pkt)
+        self.send_hci_command(0xFD01, params)
+                
     def l2cap_send_raw(self, conn, pkt):
-        """
-        Send a raw L2CAP packet.
-        
-        :param conn: Connection object
-        :param pkt: Scapy packet (L2CAP layer)
-        """
-        l2cap_payload = bytes(pkt)
-        params = struct.pack('<HH', conn['handle'], 4) + l2cap_payload  # CID=4 (ATT)
-        self.send_hci_command(0xFD02, params)  # Custom L2CAP raw TX opcode
-        
+        """Host Layer: Standard ACL path"""
+        acl = HCI_Hdr()/HCI_ACL_Hdr(handle=conn['handle'])/pkt
+        self.s.send(acl)
+
     def att_send_raw(self, conn, pkt):
         """
         Send a raw ATT packet.

@@ -21,19 +21,18 @@ jobs:
         python3 -m pip install --user mynewt
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Apply Fuzzing Patches
+    - name: Add Fuzzing Source
       run: |
-        # Apply critical protocol stack modifications
-        patch -p1 -d repos/apache-mynewt-nimble < patches/controller.patch
-        patch -p1 -d repos/apache-mynewt-nimble < patches/ble_ll.patch
-        patch -p1 -d repos/apache-mynewt-nimble < patches/ble_ll_conn.patch
-        patch -p1 -d repos/apache-mynewt-nimble < patches/ble_ll_conn_params.patch
-        patch -p1 -d repos/apache-mynewt-nimble < patches/hci_vendor.patch
-        patch -p1 -d repos/apache-mynewt-nimble < patches/gap.patch
-        patch -p1 -d repos/apache-mynewt-nimble < patches/att_bypass.patch
+        mkdir -p repos/apache-mynewt-nimble/apps/blehci/src/fuzz
+        cp ble_fuzz.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
+        echo 'syscfg.vals.FUZZING_MODE: 1' >> repos/apache-mynewt-nimble/apps/blehci/syscfg.yml
 
-        # Apply radio configuration overrides
-        patch -p1 -d repos/apache-mynewt-core < patches/phy_config.patch
+        - name: Apply Patches
+        run: |
+          NIMBLE_VER=$(grep 'apache-mynewt-nimble' project.yml | awk -F: '{print $2}')
+          for patch in patches/*.patch; do
+            git apply -v --ignore-space-change $patch
+          done
 
     - name: Build Fuzzing Firmware
       run: |
@@ -52,3 +51,9 @@ jobs:
         path: |
           firmware.elf
           repos/apache-mynewt-nimble/bin/nrf52_fuzzer/*
+
+    - name: Verify Patches
+      run: |
+         # Check for fuzzing symbols in final binary
+          arm-none-eabi-objdump -t firmware.elf | grep -q 'g_phy_raw_tx_mode'
+          arm-none-eabi-objdump -t firmware.elf | grep -q 'ble_fuzz_init'
