@@ -1,0 +1,14 @@
+diff --git a/nimble/host/include/host/ble_hs.h b/nimble/host/include/host/ble_hs.h
+--- a/nimble/host/include/host/ble_hs.h
++++ b/nimble/host/include/host/ble_hs.h
+@@ -377,6 +377,10 @@
+ #define BLE_HCI_OGF_VENDOR                 0x3f
+ #define BLE_HCI_OCF_RAW_TX                 0x01
+ #define BLE_HCI_RAW_TX_OPCODE              (BLE_HCI_OGF_VENDOR << 10 | BLE_HCI_OCF_RAW_TX)
++#define BLE_HCI_CMD_RAW_TX_LEN             251
++
++/* Fuzzing mode control */
++extern bool fuzzing_mode_enabled;
+ 
+ int ble_hs_hci_cmd_send(uint16_t opcode, const void *cmddata,
+                         uint8_t cmddata_len);

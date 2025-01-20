@@ -1,0 +1,24 @@
+diff --git a/nimble/controller/src/ble_ll.c b/nimble/controller/src/ble_ll.c
+--- a/nimble/controller/src/ble_ll.c
++++ b/nimble/controller/src/ble_ll.c
+@@ -42,6 +42,8 @@
+ /* Global LL state */
+ struct ble_ll_state g_ble_ll_state;
+ 
++extern bool g_phy_raw_tx_mode;  // From ble_phy.c
++
+ int
+ ble_ll_acl_tx(struct os_mbuf *om)
+ {
+@@ -53,6 +55,11 @@
+     uint16_t handle;
+     int rc;
+ 
++    if (g_phy_raw_tx_mode) {
++        /* Bypass LL processing for raw TX */
++        return ble_phy_tx(om, BLE_PHY_TX_PWR_DBM_0);
++    }
++
+     /* Parse the ACL data header */
+     if (os_mbuf_len(om) < BLE_LL_ACL_HDR_LEN) {
+         return BLE_LL_ERROR_ACL_FRAG;

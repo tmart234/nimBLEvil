@@ -14,35 +14,41 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Setup Mynewt
+    - name: Setup Build Environment
       run: |
-        sudo apt-get install -y git make gcc-arm-none-eabi python3
-        pip3 install --user mynewt
+        sudo apt-get update
+        sudo apt-get install -y git make gcc-arm-none-eabi python3 python3-pip
+        python3 -m pip install --user mynewt
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Apply NimBLE Modifications
+    - name: Apply Fuzzing Patches
       run: |
-        # Apply controller patches
+        # Apply critical protocol stack modifications
         patch -p1 -d repos/apache-mynewt-nimble < patches/controller.patch
-        
-        # Apply host patches
-        patch -p1 -d repos/apache-mynewt-nimble < patches/host.patch
-        
-        # Apply HCI vendor commands
+        patch -p1 -d repos/apache-mynewt-nimble < patches/ble_ll.patch
+        patch -p1 -d repos/apache-mynewt-nimble < patches/ble_ll_conn.patch
+        patch -p1 -d repos/apache-mynewt-nimble < patches/ble_ll_conn_params.patch
         patch -p1 -d repos/apache-mynewt-nimble < patches/hci_vendor.patch
+        patch -p1 -d repos/apache-mynewt-nimble < patches/gap.patch
+        patch -p1 -d repos/apache-mynewt-nimble < patches/att_bypass.patch
 
-    - name: Build Firmware
+        # Apply radio configuration overrides
+        patch -p1 -d repos/apache-mynewt-core < patches/phy_config.patch
+
+    - name: Build Fuzzing Firmware
       run: |
         newt target create nrf52_fuzzer
         newt target set nrf52_fuzzer app=@apache-mynewt-nimble/apps/blehci
         newt target set nrf52_fuzzer bsp=@apache-mynewt-core/hw/bsp/nrf52dk
-        newt target set nrf52_fuzzer build_profile=debug
+        newt target set nrf52_fuzzer build_profile=optimized
         newt build nrf52_fuzzer
         newt create-image nrf52_fuzzer 1.0.0
-        newt obj dump nrf52_fuzzer bin/bleninja.elf > bleninja.elf
+        newt obj copy nrf52_fuzzer firmware.elf
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+    - name: Upload Firmware Artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: fuzzer-firmware
-        path: bleninja.elf
+        name: ble-fuzzer-firmware
+        path: |
+          firmware.elf
+          repos/apache-mynewt-nimble/bin/nrf52_fuzzer/*
