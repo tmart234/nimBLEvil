@@ -26,6 +26,11 @@ jobs:
         sudo mv newt/newt /usr/local/bin
         newt version
 
+    - name: Initialize Mynewt Core
+      run: |
+        newt install -f -v apache-mynewt-core
+        newt install -f -v apache-mynewt-nimble
+
     - name: Add Fuzzing Source
       run: |
         mkdir -p repos/apache-mynewt-nimble/apps/blehci/src/fuzz
@@ -34,17 +39,11 @@ jobs:
 
     - name: Apply Patches
       run: |
-        # Verify patch files first
-        for patch in patches/*.patch; do
-          echo "Checking patch: $patch"
-          git apply --check --ignore-space-change $patch || :
-        done
-        
-        # Apply patches with verbose output
-        NIMBLE_VER=$(grep 'apache-mynewt-nimble' src/project.yml | awk -F: '{print $2}')
-        for patch in patches/*.patch; do
-          echo "Applying patch: $patch"
-          git apply -v --ignore-space-change $patch || {
+        cd repos/apache-mynewt-nimble
+        for patch in ../../patches/*.patch; do
+          echo "Applying $patch"
+          # Adjust path stripping for Mynewt structure
+          git apply --verbose --ignore-space-change --directory=nimble $patch || {
             echo "Failed to apply $patch"
             exit 1
           }
