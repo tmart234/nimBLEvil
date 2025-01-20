@@ -18,9 +18,14 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git make gcc-arm-none-eabi python3 python3-pip
-        # Install Apache Mynewt tools
-        python3 -m pip install --user https://github.com/apache/mynewt-newt/archive/mynewt_1_10_0_tag.tar.gz
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        # Install Mynewt Newt tool
+        wget https://github.com/apache/mynewt-newt/releases/download/mynewt_1_10_0_tag/newt_1.10.0_linux_amd64.tar.gz
+        tar -xzf newt_1.10.0_linux_amd64.tar.gz
+        sudo mv newt/newt /usr/local/bin
+        newt version
+        # Install Mynewt dependencies
+        go install mynewt.apache.org/newt/newt@latest
+        echo "$HOME/go/bin" >> $GITHUB_PATH
 
     - name: Add Fuzzing Source
       run: |
