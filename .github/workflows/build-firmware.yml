@@ -1,64 +1,48 @@
-name: Build BLE Fuzzer Firmware
+name: Build Custom NimBLE Firmware
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: '0 0 * * 0'  # Weekly builds
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-nrf52-fuzzer:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Go
-      uses: actions/setup-go@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
       with:
-        go-version: '1.20'
-    
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi
-        sudo apt-get install -y wget git make unzip
+        submodules: recursive
 
-    - name: Install and Build Newt
+    - name: Setup Mynewt
       run: |
-        # Clone newt repository
-        git clone https://github.com/apache/mynewt-newt.git
-        cd mynewt-newt
-        # Build newt
-        ./build.sh
-        # Install newt
-        sudo mv newt/newt /usr/local/bin
-        cd ..
-        # Verify installation
-        which newt
-        newt version
+        sudo apt-get install -y git make gcc-arm-none-eabi python3
+        pip3 install --user mynewt
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Cache newt dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.newt
-          project.state
-        key: ${{ runner.os }}-newt-${{ hashFiles('project.yml') }}
-        restore-keys: |
-          ${{ runner.os }}-newt-
-
-    - name: Run Build Script
+    - name: Apply NimBLE Modifications
       run: |
-        chmod +x scripts/build.sh
-        ./scripts/build.sh
-      
-    - name: Upload Firmware
+        # Apply controller patches
+        patch -p1 -d repos/apache-mynewt-nimble < patches/controller.patch
+        
+        # Apply host patches
+        patch -p1 -d repos/apache-mynewt-nimble < patches/host.patch
+        
+        # Apply HCI vendor commands
+        patch -p1 -d repos/apache-mynewt-nimble < patches/hci_vendor.patch
+
+    - name: Build Firmware
+      run: |
+        newt target create nrf52_fuzzer
+        newt target set nrf52_fuzzer app=@apache-mynewt-nimble/apps/blehci
+        newt target set nrf52_fuzzer bsp=@apache-mynewt-core/hw/bsp/nrf52dk
+        newt target set nrf52_fuzzer build_profile=debug
+        newt build nrf52_fuzzer
+        newt create-image nrf52_fuzzer 1.0.0
+        newt obj dump nrf52_fuzzer bin/bleninja.elf > bleninja.elf
+
+    - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ble-fuzzer-firmware
-        path: |
-          bin/targets/nrf52_bsp/app/*.hex
-          bin/targets/nrf52_bsp/app/*.elf
+        name: fuzzer-firmware
+        path: bleninja.elf
