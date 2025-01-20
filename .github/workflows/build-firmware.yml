@@ -42,8 +42,7 @@ jobs:
         cd repos/apache-mynewt-nimble
         for patch in ../../patches/*.patch; do
           echo "Applying $patch"
-          # Adjust path stripping for Mynewt structure
-          git apply --verbose --ignore-space-change --directory=nimble $patch || {
+          git apply --verbose --ignore-space-change $patch || {
             echo "Failed to apply $patch"
             exit 1
           }
