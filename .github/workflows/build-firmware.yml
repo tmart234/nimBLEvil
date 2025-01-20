@@ -18,18 +18,19 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git make gcc-arm-none-eabi python3 python3-pip
-        python3 -m pip install --user mynewt
+        # Install Apache Mynewt tools
+        python3 -m pip install --user https://github.com/apache/mynewt-newt/releases/download/mynewt_1_10_0_tag/newt-1.10.0.tar.gz
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Add Fuzzing Source
       run: |
         mkdir -p repos/apache-mynewt-nimble/apps/blehci/src/fuzz
-        cp ble_fuzz.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
+        cp src/ble_fuzz.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
         echo 'syscfg.vals.FUZZING_MODE: 1' >> repos/apache-mynewt-nimble/apps/blehci/syscfg.yml
 
     - name: Apply Patches
       run: |
-        NIMBLE_VER=$(grep 'apache-mynewt-nimble' project.yml | awk -F: '{print $2}')
+        NIMBLE_VER=$(grep 'apache-mynewt-nimble' src/project.yml | awk -F: '{print $2}')
         for patch in patches/*.patch; do
           git apply -v --ignore-space-change $patch
         done
@@ -54,6 +55,6 @@ jobs:
 
     - name: Verify Patches
       run: |
-         # Check for fuzzing symbols in final binary
-          arm-none-eabi-objdump -t firmware.elf | grep -q 'g_phy_raw_tx_mode'
-          arm-none-eabi-objdump -t firmware.elf | grep -q 'ble_fuzz_init'
+        # Check for fuzzing symbols in final binary
+        arm-none-eabi-objdump -t firmware.elf | grep -q 'g_phy_raw_tx_mode'
+        arm-none-eabi-objdump -t firmware.elf | grep -q 'ble_fuzz_init'
