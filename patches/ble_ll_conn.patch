@@ -1,15 +1,15 @@
 diff --git a/nimble/controller/src/ble_ll_conn.c b/nimble/controller/src/ble_ll_conn.c
 --- a/nimble/controller/src/ble_ll_conn.c
 +++ b/nimble/controller/src/ble_ll_conn.c
-@@ -2136,6 +2136,7 @@
+@@ -2136,7 +2136,6 @@
  int
  ble_ll_conn_sm_get_tx(struct ble_ll_conn_sm *connsm)
  {
-+    /* FUZZING_HOOK: Bypass connection checks */
+-    /* FUZZING_HOOK: Bypass connection checks */
      struct ble_ll_conn_sm *connsm;
      int rc;
  
-@@ -2143,6 +2144,10 @@
+@@ -2143,6 +2142,10 @@
          return 0;
      }
  

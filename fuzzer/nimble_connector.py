@@ -3,6 +3,7 @@ import os
 import random
 from scapy.layers.bluetooth import *
 from serial import Serial
+import serial
 
 class NimBLEConnectionManager:
     def __init__(self, adapter=0, role='central', baudrate=115200):
@@ -32,10 +33,14 @@ class NimBLEConnectionManager:
         
         :param opcode: HCI command opcode
         :param params: Command parameters (bytes)
+        :raises: SerialException if communication fails
         """
-        hdr = struct.pack('<HB', opcode, len(params))
-        self.ser.write(b'\x01' + hdr + params)
-         
+        try:
+            hdr = struct.pack('<HB', opcode, len(params))
+            self.ser.write(b'\x01' + hdr + params)
+        except serial.SerialException as e:
+            raise serial.SerialException(f"Failed to send HCI command: {e}")     
+
     def init_connection(self, address, address_type='public'):
         """
         Initialize a BLE connection object.

@@ -31,11 +31,25 @@ void ble_fuzz_set_mode(bool enable)
 
 void ble_fuzz_inject_packet(const uint8_t *data, size_t len)
 {
-    if (!fuzzing_active) return;
+    if (!fuzzing_active || !data || len == 0) {
+        return;
+    }
     
     struct os_mbuf *m = ble_hci_trans_alloc_buf();
-    if (!m) return;
+    if (!m) {
+        printf("Failed to allocate buffer for fuzzing\n");
+        return;
+    }
     
-    os_mbuf_append(m, data, len);
-    ble_phy_tx(m, BLE_PHY_TX_PWR_DBM_0);
+    int rc = os_mbuf_append(m, data, len);
+    if (rc != 0) {
+        printf("Failed to append data to buffer: %d\n", rc);
+        os_mbuf_free_chain(m);
+        return;
+    }
+    
+    rc = ble_phy_tx(m, BLE_PHY_TX_PWR_DBM_0);
+    if (rc != 0) {
+        printf("Failed to transmit packet: %d\n", rc);
+    }
 }

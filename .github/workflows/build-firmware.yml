@@ -27,12 +27,12 @@ jobs:
         cp ble_fuzz.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
         echo 'syscfg.vals.FUZZING_MODE: 1' >> repos/apache-mynewt-nimble/apps/blehci/syscfg.yml
 
-        - name: Apply Patches
-        run: |
-          NIMBLE_VER=$(grep 'apache-mynewt-nimble' project.yml | awk -F: '{print $2}')
-          for patch in patches/*.patch; do
-            git apply -v --ignore-space-change $patch
-          done
+    - name: Apply Patches
+      run: |
+        NIMBLE_VER=$(grep 'apache-mynewt-nimble' project.yml | awk -F: '{print $2}')
+        for patch in patches/*.patch; do
+          git apply -v --ignore-space-change $patch
+        done
 
     - name: Build Fuzzing Firmware
       run: |
