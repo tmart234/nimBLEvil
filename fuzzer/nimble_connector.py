@@ -1,45 +1,40 @@
-import struct
-import os
-import random
+from scapy.all import *
 from scapy.layers.bluetooth import *
-from serial import Serial
-import serial
+from scapy.layers.bluetooth4LE import *
+import time
 
 class NimBLEConnectionManager:
-    def __init__(self, adapter=0, role='central', baudrate=115200):
+    def __init__(self, adapter=0, role='central'):
         """
-        Initialize the NimBLE connection manager.
+        Initialize the NimBLE connection manager with BluetoothUserSocket.
         
         :param adapter: HCI adapter index (default: 0)
         :param role: Role ('central' or 'peripheral')
-        :param baudrate: Serial baudrate for HCI communication
         """
-        self.ser = Serial(f'/dev/ttyACM{adapter}', baudrate, timeout=1)
+        self.socket = BluetoothUserSocket(adapter)
         self.role = role
         self.connections = {}
         self.current_conn = None
+        self.connection_handle = None  # Store active connection handle
         
     def __enter__(self):
-        """Context manager entry point."""
+        """Context manager entry point"""
         return self
         
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit point."""
-        self.ser.close()
+        """Context manager exit point"""
+        self.socket.close()
         
-    def send_hci_command(self, opcode, params):
+    def send_hci_command(self, cmd_pkt):
         """
-        Send an HCI command to the NimBLE controller.
+        Send HCI command using Scapy's BluetoothUserSocket.
         
-        :param opcode: HCI command opcode
-        :param params: Command parameters (bytes)
-        :raises: SerialException if communication fails
+        :param cmd_pkt: Scapy HCI command packet
         """
         try:
-            hdr = struct.pack('<HB', opcode, len(params))
-            self.ser.write(b'\x01' + hdr + params)
-        except serial.SerialException as e:
-            raise serial.SerialException(f"Failed to send HCI command: {e}")     
+            self.socket.send(cmd_pkt)
+        except Exception as e:
+            print(f"Command send failed: {e}")
 
     def init_connection(self, address, address_type='public'):
         """
@@ -47,77 +42,70 @@ class NimBLEConnectionManager:
         
         :param address: Peer device address (e.g., "AA:BB:CC:DD:EE:FF")
         :param address_type: Address type ('public' or 'random')
-        :return: Connection object
         """
-        conn = {
+        return {
             'address': address,
             'address_type': 0 if address_type == 'public' else 1,
-            'handle': None,
-            'access_addr': None,
-            'crc_init': None
+            'handle': None
         }
-        self.current_conn = conn
-        return conn
         
-    def connect(self, conn):
+    def connect(self, conn, timeout=5):
         """
-        Establish a connection to the peer device.
+        Establish a connection to the peer device using Scapy's HCI commands.
         
         :param conn: Connection object
+        :param timeout: Connection timeout in seconds
         """
-        addr_bytes = bytes.fromhex(conn['address'].replace(':', ''))[::-1]
-        cmd = struct.pack('<B6sBBHHHH', 
-            0x0D,       # LE Create Connection
-            addr_bytes,
-            conn['address_type'],  # addr type
-            0,          # Own addr type
-            0x0010,     # Scan interval
-            0x0010,     # Scan window
-            0x0006,     # Min connection interval
-            0x0C80      # Max connection interval
+        # Convert address to HCI format
+        addr = bytes.fromhex(conn['address'].replace(':', ''))[::-1]
+        
+        # Send LE Create Connection command
+        cmd = HCI_Cmd_LE_Create_Connection(
+            peer_addr=addr,
+            peer_addr_type=conn['address_type'],
+            own_addr_type=0,  # Public address
+            le_scan_interval=0x0010,
+            le_scan_window=0x0010,
+            conn_interval_min=0x0006,
+            conn_interval_max=0x0C80
         )
-        self.send_hci_command(0x200D, cmd)
+        self.send_hci_command(cmd)
         
         # Wait for connection complete event
-        while True:
-            pkt = self.ser.read()
-            if pkt[0] == 0x3E:  # LE Meta Event
-                if pkt[2] == 0x01:  # Connection Complete
-                    conn['handle'] = struct.unpack('<H', pkt[3:5])[0]
-                    conn['access_addr'] = struct.unpack('<I', pkt[5:9])[0]
-                    conn['crc_init'] = struct.unpack('<I', pkt[9:13])[0]
-                    break
-                    
-    def ll_send_raw(self, pkt, disable_crc=False, disable_whiten=False):
-        """
-        Send raw LL packet with per-packet CRC/whitening control.
-        
-        :param disable_crc: Disable CRC ONLY for this packet
-        :param disable_whiten: Disable whitening ONLY for this packet
-        """
-        flags = 0
-        flags |= 0x01 * disable_crc
-        flags |= 0x02 * disable_whiten
-        
-        # Single-packet override (no persistent state)
-        params = struct.pack('<BH', flags, len(pkt)) + bytes(pkt)
-        self.send_hci_command(0xFD01, params)
+        start = time.time()
+        while time.time() - start < timeout:
+            pkt = self.socket.recv()
+            if pkt and pkt.type == 0x02 and pkt.code == 0x3e:  # LE Meta Event
+                if pkt.event == 0x01:  # Connection Complete
+                    conn['handle'] = pkt.handle
+                    self.connection_handle = pkt.handle
+                    print(f"Connected! Handle: 0x{pkt.handle:04x}")
+                    return
+        raise TimeoutError("Connection timed out")
                 
     def l2cap_send_raw(self, conn, pkt):
-        """Host Layer: Standard ACL path"""
-        acl = HCI_Hdr()/HCI_ACL_Hdr(handle=conn['handle'])/pkt
-        self.s.send(acl)
+        """
+        Send raw L2CAP packet via ACL using Scapy's stack.
+        
+        :param conn: Connection object
+        :param pkt: Scapy L2CAP packet
+        """
+        acl = HCI_Hdr(type=2) / HCI_ACL_Hdr(
+            handle=conn['handle'],
+            PB=0x02,  # Continuation fragment
+            BC=0x00
+        ) / pkt
+        self.socket.send(acl)
 
     def att_send_raw(self, conn, pkt):
         """
-        Send a raw ATT packet.
+        Send raw ATT packet through L2CAP channel.
         
         :param conn: Connection object
-        :param pkt: Scapy packet (ATT layer)
+        :param pkt: Scapy ATT packet
         """
-        att_payload = bytes(pkt)
-        l2cap_pkt = L2CAP_Hdr(cid=4) / att_payload  # Encapsulate in L2CAP
-        self.l2cap_send_raw(conn, l2cap_pkt)
+        l2cap = L2CAP_Hdr(cid=4) / pkt  # ATT channel
+        self.l2cap_send_raw(conn, l2cap)
         
     def fuzz_packet(self, base_pkt, fuzz_fields):
         """
@@ -125,7 +113,6 @@ class NimBLEConnectionManager:
         
         :param base_pkt: Base packet to fuzz
         :param fuzz_fields: Fields to fuzz (dict of field names to values)
-        :return: Fuzzed packet
         """
         pkt = base_pkt.copy()
         for field, value in fuzz_fields.items():
@@ -141,5 +128,32 @@ class NimBLEConnectionManager:
         
         :param conn: Connection object
         """
-        params = struct.pack('<HB', conn['handle'], 0x16)  # Reason: Local Host Terminated
-        self.send_hci_command(0x0406, params)
+        cmd = HCI_Cmd_Disconnect(handle=conn['handle'], reason=0x16)
+        self.send_hci_command(cmd)
+        print(f"Disconnected handle 0x{conn['handle']:04x}")
+
+    def _send_vendor_hci(self, vendor, cmd_type, params):
+        """Send vendor-specific HCI command"""
+        nordic_params = self.vendor_ops.get('nordic', {})
+        cmd = struct.pack('<BH', 
+            nordic_params.get(cmd_type, 0x00),
+            len(params)
+        ) + params
+        pkt = HCI_Hdr(type=1)/HCI_Command_Hdr(opcode=self.NORDIC_LE_OPCODE)/Raw(cmd)
+        self.send_hci_command(pkt)
+
+    def nordic_disable_crc(self, enable=True):
+        """Nordic-specific command to disable CRC validation"""
+        print(f"[+] {'Disabling' if enable else 'Enabling'} CRC via Nordic command")
+        params = struct.pack('<B', 
+            self.vendor_ops['nordic']['disable_crc'] if enable else 0x00
+        )
+        self._send_vendor_hci('nordic', 'disable_crc', params)
+
+    def nordic_disable_whiten(self, enable=True):
+        """Nordic-specific command to disable whitening"""
+        print(f"[+] {'Disabling' if enable else 'Enabling'} Whitening via Nordic command")
+        params = struct.pack('<B', 
+            self.vendor_ops['nordic']['disable_whiten'] if enable else 0x00
+        )
+        self._send_vendor_hci('nordic', 'disable_whiten', params)

@@ -1,23 +1,12 @@
 diff --git a/nimble/controller/src/ble_ll_conn.c b/nimble/controller/src/ble_ll_conn.c
 --- a/nimble/controller/src/ble_ll_conn.c
 +++ b/nimble/controller/src/ble_ll_conn.c
-@@ -2136,7 +2136,6 @@
- int
- ble_ll_conn_sm_get_tx(struct ble_ll_conn_sm *connsm)
- {
--    /* FUZZING_HOOK: Bypass connection checks */
-     struct ble_ll_conn_sm *connsm;
-     int rc;
- 
-@@ -2143,6 +2142,10 @@
+@@ -2143,6 +2143,7 @@
          return 0;
      }
  
-+    if (g_phy_raw_tx_mode) {
-+        return 0;  // Bypass state checks
-+    }
-+
-     /* Original implementation continues... */
-     /* Get connection state machine */
-     connsm = ble_ll_conn_get_connsm(conn_handle);
-     if (!connsm) {
++    /* FUZZING: Bypass state checks when fuzzing */
+-    if (g_phy_raw_tx_mode) {
++    if (g_fuzzing_enabled) {
+         return 0;  // Bypass state checks
+     }

@@ -41,8 +41,8 @@ jobs:
       run: |
         # Copy controller fuzzing files
         mkdir -p repos/apache-mynewt-nimble/nimble/controller/{include/controller,src}
-        cp src/nimble/controller/include/controller/ble_fuzz.h repos/apache-mynewt-nimble/nimble/controller/include/controller/
-        cp src/nimble/controller/src/ble_fuzz.c repos/apache-mynewt-nimble/nimble/controller/src/
+        cp src/nimble/controller/include/controller/ble_fuzzer.h repos/apache-mynewt-nimble/nimble/controller/include/controller/
+        cp src/nimble/controller/src/ble_fuzzer.c repos/apache-mynewt-nimble/nimble/controller/src/
     
     - name: Apply Controller Patch
       run: |
