@@ -37,16 +37,17 @@ jobs:
         cp src/ble_fuzz.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
         echo 'syscfg.vals.FUZZING_MODE: 1' >> repos/apache-mynewt-nimble/apps/blehci/syscfg.yml
 
-    - name: Apply Patches
+    - name: Add Fuzzing Source
+      run: |
+        # Copy controller fuzzing files
+        mkdir -p repos/apache-mynewt-nimble/nimble/controller/{include/controller,src}
+        cp src/nimble/controller/include/controller/ble_fuzz.h repos/apache-mynewt-nimble/nimble/controller/include/controller/
+        cp src/nimble/controller/src/ble_fuzz.c repos/apache-mynewt-nimble/nimble/controller/src/
+    
+    - name: Apply Controller Patch
       run: |
         cd repos/apache-mynewt-nimble
-        for patch in ../../patches/*.patch; do
-          echo "Applying $patch"
-          git apply --verbose --ignore-space-change $patch || {
-            echo "Failed to apply $patch"
-            exit 1
-          }
-        done
+        git apply ../../patches/controller_fuzz.patch
 
     - name: Build Fuzzing Firmware
       run: |

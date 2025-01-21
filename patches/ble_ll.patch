@@ -1,37 +1,11 @@
 diff --git a/nimble/controller/src/ble_ll.c b/nimble/controller/src/ble_ll.c
 --- a/nimble/controller/src/ble_ll.c
 +++ b/nimble/controller/src/ble_ll.c
-@@ -42,6 +42,10 @@
- /* Global LL state */
- struct ble_ll_state g_ble_ll_state;
- 
-+/* FUZZING: Global control flags */
-+bool g_fuzzing_mode_enabled;
-+bool g_phy_raw_tx_mode;
-+
- extern bool g_phy_raw_tx_mode;  // From ble_phy.c
- 
- int
-@@ -2156,6 +2160,11 @@
-     /* Set output power to default */
-     g_ble_ll_tx_power = ble_ll_tx_power_round(MIN(MYNEWT_VAL(BLE_LL_TX_PWR_DBM),
-                                                   MYNEWT_VAL(BLE_LL_TX_PWR_MAX_DBM)));
-+
-+    /* Initialize fuzzing controls */
-+    g_fuzzing_mode_enabled = false;
-+    g_phy_raw_tx_mode = false;
-+
-     g_ble_ll_tx_power_phy_current = INT8_MAX;
- 
-     /* FLush all packets from Link layer queues */
-@@ -2673,6 +2682,10 @@
-     ble_ll_iso_big_init();
- #endif
- 
-+    /* Initialize fuzzing mode */
-+    g_fuzzing_mode_enabled = false;
-+    g_phy_raw_tx_mode = false;
-+
- #if MYNEWT_VAL(BLE_LL_EXT)
-     ble_ll_ext_init();
- #endif
+@@ -29,6 +29,7 @@
+ #include <string.h>
+ #include "sysinit/sysinit.h"
+ #include "syscfg/syscfg.h"
++#include "controller/ble_fuzz.h"
+ #include "os/os.h"
+ #include "stats/stats.h"
+ #include "nimble/ble.h"
