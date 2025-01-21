@@ -1,9 +1,9 @@
 diff --git a/nimble/host/include/host/ble_hs.h b/nimble/host/include/host/ble_hs.h
 --- a/nimble/host/include/host/ble_hs.h
 +++ b/nimble/host/include/host/ble_hs.h
-@@ -755,6 +755,15 @@
+@@ -49,6 +49,15 @@
  #ifdef __cplusplus
- }
+ extern "C" {
  #endif
 +
 +/* Vendor-specific HCI commands */
@@ -15,5 +15,6 @@ diff --git a/nimble/host/include/host/ble_hs.h b/nimble/host/include/host/ble_hs
 +
 +/* FUZZING_STATE: Global mode control */
 +extern bool fuzzing_mode_enabled;
-+
- #endif  // H_BLE_HS_
+ 
+ /** Represents an infinite value for timeouts or durations. */
+ #define BLE_HS_FOREVER              INT32_MAX
