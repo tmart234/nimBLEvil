@@ -1,8 +1,5 @@
 /* File: ble_fuzz.c */
-#include "ble_fuzz.h"
-#include "host/ble_hs.h"
-#include "controller/ble_phy.h"
-#include "services/gap/ble_svc_gap.h"
+#include "ble_fuzzer.h"
 
 /* Internal state */
 static bool fuzzing_active = false;
