@@ -4,6 +4,14 @@ from scapy.layers.bluetooth4LE import *
 import time
 
 class NimBLEConnectionManager:
+    class BLEState(Enum):
+        STANDBY = 0
+        ADVERTISING = 1
+        SCANNING = 2
+        INITIATING = 3
+        CONNECTED = 4
+
+
     def __init__(self, adapter=0, role='central'):
         """
         Initialize the NimBLE connection manager with BluetoothUserSocket.
@@ -15,7 +23,7 @@ class NimBLEConnectionManager:
         self.role = role
         self.connections = {}
         self.current_conn = None
-        self.connection_handle = None  # Store active connection handle
+        self.connection_handle = None 
         self.NORDIC_LE_OPCODE = 0xFD01
         self.vendor_ops = {'nordic': {'disable_crc': 0x01, 'disable_whiten': 0x02}}
 
@@ -174,14 +182,4 @@ class NimBLEConnectionManager:
         # re-enable for other packets
         self.nordic_disable_crc(disabled=False)
         self.nordic_disable_whiten(disabled=False)
-
-    def _detect_crash(self, conn):
-        """Check for post-exploitation state"""
-        try:
-            # Send valid ATT request
-            self.att_send_raw(conn, ATT_Read_Request(gatt_handle=0x0001))
-            if not self.socket.recv(timeout=1):
-                return True  # Target unresponsive
-        except Exception as e:
-            return True
-        return False
+    
