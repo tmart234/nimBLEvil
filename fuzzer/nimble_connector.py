@@ -16,7 +16,9 @@ class NimBLEConnectionManager:
         self.connections = {}
         self.current_conn = None
         self.connection_handle = None  # Store active connection handle
-        
+        self.NORDIC_LE_OPCODE = 0xFD01
+        self.vendor_ops = {'nordic': {'disable_crc': 0x01, 'disable_whiten': 0x02}}
+
     def __enter__(self):
         """Context manager entry point"""
         return self
@@ -60,7 +62,7 @@ class NimBLEConnectionManager:
         addr = bytes.fromhex(conn['address'].replace(':', ''))[::-1]
         
         # Send LE Create Connection command
-        cmd = HCI_Cmd_LE_Create_Connection(
+        cmd = HCI_Cmd_Create_Connection(
             peer_addr=addr,
             peer_addr_type=conn['address_type'],
             own_addr_type=0,  # Public address
@@ -142,18 +144,44 @@ class NimBLEConnectionManager:
         pkt = HCI_Hdr(type=1)/HCI_Command_Hdr(opcode=self.NORDIC_LE_OPCODE)/Raw(cmd)
         self.send_hci_command(pkt)
 
-    def nordic_disable_crc(self, enable=True):
+    def nordic_disable_crc(self, disabled=True):
         """Nordic-specific command to disable CRC validation"""
-        print(f"[+] {'Disabling' if enable else 'Enabling'} CRC via Nordic command")
+        print(f"[+] {'Disabling' if disabled else 'Enabling'} CRC via Nordic command")
         params = struct.pack('<B', 
-            self.vendor_ops['nordic']['disable_crc'] if enable else 0x00
+            self.vendor_ops['nordic']['disable_crc'] if disabled else 0x00
         )
         self._send_vendor_hci('nordic', 'disable_crc', params)
 
-    def nordic_disable_whiten(self, enable=True):
+    def nordic_disable_whiten(self, disabled=True):
         """Nordic-specific command to disable whitening"""
-        print(f"[+] {'Disabling' if enable else 'Enabling'} Whitening via Nordic command")
+        print(f"[+] {'Disabling' if disabled else 'Enabling'} Whitening via Nordic command")
         params = struct.pack('<B', 
-            self.vendor_ops['nordic']['disable_whiten'] if enable else 0x00
+            self.vendor_ops['nordic']['disable_whiten'] if disabled else 0x00
         )
         self._send_vendor_hci('nordic', 'disable_whiten', params)
+
+    def ll_send_raw(self, pdu, disable_crc=False, disable_whiten=False):
+        """Send raw LL PDU using vendor command"""
+        flags = 0
+        if disable_crc: flags |= 0x01
+        if disable_whiten: flags |= 0x02
+        
+        params = struct.pack('<BH', flags, len(pdu)) + bytes(pdu)
+        cmd = HCI_Hdr(type=1)/HCI_Command_Hdr(opcode=0xFD01)/Raw(params)
+        self.nordic_disable_crc()
+        self.nordic_disable_whiten()
+        self.send_hci_command(cmd)
+        # re-enable for other packets
+        self.nordic_disable_crc(disabled=False)
+        self.nordic_disable_whiten(disabled=False)
+
+    def _detect_crash(self, conn):
+        """Check for post-exploitation state"""
+        try:
+            # Send valid ATT request
+            self.att_send_raw(conn, ATT_Read_Request(gatt_handle=0x0001))
+            if not self.socket.recv(timeout=1):
+                return True  # Target unresponsive
+        except Exception as e:
+            return True
+        return False
