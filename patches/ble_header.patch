@@ -1,16 +1,19 @@
 diff --git a/nimble/host/include/host/ble_hs.h b/nimble/host/include/host/ble_hs.h
 --- a/nimble/host/include/host/ble_hs.h
 +++ b/nimble/host/include/host/ble_hs.h
-@@ -376,7 +376,12 @@
- /* Vendor-specific HCI commands */
- #define BLE_HCI_OGF_VENDOR                 0x3f
- #define BLE_HCI_OCF_RAW_TX                 0x01
+@@ -755,6 +755,15 @@
+ #ifdef __cplusplus
+ }
+ #endif
++
++/* Vendor-specific HCI commands */
++#define BLE_HCI_OGF_VENDOR                 0x3f
++#define BLE_HCI_OCF_RAW_TX                 0x01
 +/* FUZZING_HOOK: Custom transmission opcode */
- #define BLE_HCI_RAW_TX_OPCODE              (BLE_HCI_OGF_VENDOR << 10 | BLE_HCI_OCF_RAW_TX)
++#define BLE_HCI_RAW_TX_OPCODE              (BLE_HCI_OGF_VENDOR << 10 | BLE_HCI_OCF_RAW_TX)
 +#define BLE_HCI_CMD_RAW_TX_LEN             251
 +
 +/* FUZZING_STATE: Global mode control */
 +extern bool fuzzing_mode_enabled;
- 
- int ble_hs_hci_cmd_send(uint16_t opcode, const void *cmddata,
-                         uint8_t cmddata_len);
++
+ #endif  // H_BLE_HS_
