@@ -3,6 +3,10 @@
 
 void ble_phy_fuzz_tx(uint8_t *pdu, uint16_t len) {
     // Bypass normal TX pipeline
+    // Validate max PDU length for nRF52
+    // TODO: can we remove?
+    if (len > 255) return;
+
     NRF_RADIO->PACKETPTR = (uint32_t)pdu;
     NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | 
                        RADIO_SHORTS_END_DISABLE_Msk;

@@ -1,13 +1,14 @@
 import subprocess
 import pytest
 
-def test_phy_flags():
+def test_flags():
     result = subprocess.run(
         ["arm-none-eabi-objdump", "-t", "firmware.elf"],
         capture_output=True, text=True
     )
     assert "g_phy_raw_tx_mode" in result.stdout
     assert "ble_fuzz_init" in result.stdout
+    assert "ble_ll_hci_fuzz_register" in result.stdout
 
 def test_firmware_build():
     # Verify that the firmware builds successfully
@@ -17,10 +18,11 @@ def test_firmware_build():
     )
     assert result.returncode == 0, "Firmware build failed"
 
-def test_patch_application():
-    # Verify that patches are applied correctly
+def test_symbols():
+    """Verify symbols exist"""
     result = subprocess.run(
-        ["git", "apply", "--check", "patches/ble_header.patch"],
+        ["arm-none-eabi-nm", "firmware.elf"],
         capture_output=True, text=True
     )
-    assert result.returncode == 0, "Patch application failed"
+    assert "ble_ll_fuzz_radio_override" in result.stdout
+    assert "ble_phy_fuzz_tx" in result.stdout

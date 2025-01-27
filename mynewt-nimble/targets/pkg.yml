@@ -4,6 +4,10 @@ pkg.deps:
   - "@apache-mynewt-core/kernel/os"
   - "@apache-mynewt-nimble/nimble/controller"
   - "@apache-mynewt-nimble/nimble/transport/uart"
-  - "nimble/controller/src/ble_ll_fuzz"      # Add custom modules
+  # custom modules
+  - "nimble/controller/src/ble_ll_fuzz"   
   - "nimble/controller/src/ble_ll_hci_fuzz"
   - "nimble/transport/uart/src/hci_uart_fuzz"
+   # board Specific
+  - "@apache-mynewt-core/hw/bsp/nrf52dk"
+  - "@apache-mynewt-nimble/nimble/porting/nrf5x"
