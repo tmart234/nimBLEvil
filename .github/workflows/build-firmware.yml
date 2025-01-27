@@ -35,13 +35,13 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: apache/mynewt-nimble
-        path: mynewt-nimble
+        path: repos/apache-mynewt-nimble
 
     - name: Add Fuzzing Source code
       run: |
-        cp -r mynewt-nimble/nimble/controller/* mynewt-nimble/nimble/controller/
-        cp -r mynewt-nimble/nimble/transport/* mynewt-nimble/nimble/transport/
-        cp -r mynewt-nimble/nimble/porting/nrf5x mynewt-nimble/nimble/porting/
+        cp -rf custom-nimble/mynewt-nimble/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
+        cp -rf custom-nimble/mynewt-nimble/nimble/transport/* repos/apache-mynewt-nimble/nimble/transport/
+        cp -rf custom-nimble/mynewt-nimble/nimble/porting/nrf5x repos/apache-mynewt-nimble/nimble/porting/
 
     - name: Build Fuzzing Firmware
       run: |
