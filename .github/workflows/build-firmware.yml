@@ -31,24 +31,17 @@ jobs:
         newt install -f -v apache-mynewt-core
         newt install -f -v apache-mynewt-nimble
 
-    - name: Add Fuzzing Source
-      run: |
-        mkdir -p repos/apache-mynewt-nimble/apps/blehci/src/fuzz
-        cp src/ble_fuzz.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
-        echo 'syscfg.vals.FUZZING_MODE: 1' >> repos/apache-mynewt-nimble/apps/blehci/syscfg.yml
-
-    - name: Add Fuzzing Source
+    - name: Add Fuzzing Source code
       run: |
         # Copy controller fuzzing files
+        mkdir -p repos/apache-mynewt-nimble/apps/blehci/src/fuzz
+        cp src/ble_fuzzer.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
+        echo 'syscfg.vals.FUZZING_MODE: 1' >> repos/apache-mynewt-nimble/apps/blehci/syscfg.yml
+
         mkdir -p repos/apache-mynewt-nimble/nimble/controller/{include/controller,src}
         cp src/nimble/controller/include/controller/ble_fuzzer.h repos/apache-mynewt-nimble/nimble/controller/include/controller/
         cp src/nimble/controller/src/ble_fuzzer.c repos/apache-mynewt-nimble/nimble/controller/src/
     
-    - name: Apply Controller Patch
-      run: |
-        cd repos/apache-mynewt-nimble
-        git apply ../../patches/controller_fuzz.patch
-
     - name: Build Fuzzing Firmware
       run: |
         newt target create nrf52_fuzzer

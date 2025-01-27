@@ -1,9 +1,0 @@
-pkg.deps.APP_FUZZ:
-    - "@apache-mynewt-nimble/apps/blehci"
-    - '@apache-mynewt-nimble/controller'
-    - '@apache-mynewt-nimble/host'
-    - 'src/ble_fuzzer'
-
-syscfg.vals:
-    FUZZING_MODE: 1
-    BLE_LL_VENDOR_FEATURES: 1 # ll hci command

@@ -1,0 +1,9 @@
+pkg.name: targets/fuzz_test
+pkg.deps:
+  - "@apache-mynewt-core/hw/bsp/your_board"
+  - "@apache-mynewt-core/kernel/os"
+  - "@apache-mynewt-nimble/nimble/controller"
+  - "@apache-mynewt-nimble/nimble/transport/uart"
+  - "nimble/controller/src/ble_ll_fuzz"      # Add custom modules
+  - "nimble/controller/src/ble_ll_hci_fuzz"
+  - "nimble/transport/uart/src/hci_uart_fuzz"

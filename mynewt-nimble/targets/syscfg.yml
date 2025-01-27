@@ -1,0 +1,4 @@
+syscfg.vals:
+  BLE_LL_CFG_CONN_STRICT_SCHED: 0  # Disable strict scheduling
+  BLE_LL_FUZZ_NRF52: 1      # Enable nRF52 fuzzing features
+  BLE_PHY_DIRECT_TX: 1      # Allow direct PHY access
