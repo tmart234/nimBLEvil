@@ -39,9 +39,9 @@ jobs:
 
     - name: Add Fuzzing Source code
       run: |
-        cp -rf mynewt-nimble/mynewt-nimble/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
-        cp -rf mynewt-nimble/mynewt-nimble/nimble/transport/* repos/apache-mynewt-nimble/nimble/transport/
-        cp -rf mynewt-nimble/mynewt-nimble/nimble/porting/nrf5x repos/apache-mynewt-nimble/nimble/porting/
+        cp -rf mynewt-nimble/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
+        cp -rf mynewt-nimble/nimble/transport/* repos/apache-mynewt-nimble/nimble/transport/
+        cp -rf mynewt-nimble/nimble/porting/nrf5x repos/apache-mynewt-nimble/nimble/porting/
 
     - name: Build Fuzzing Firmware
       run: |
