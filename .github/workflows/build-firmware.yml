@@ -33,8 +33,9 @@ jobs:
 
     - name: Add Fuzzing Source code
       run: |
-        # Copy fuzzing controller components
+        # Copy fuzzing controller & transport components
         cp -r mynewt-nimble/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
+        cp -r mynewt-nimble/nimble/transport/* repos/apache-mynewt-nimble/nimble/transport/
         # Copy nRF52 porting files
         cp -r mynewt-nimble/nimble/porting/nrf5x repos/apache-mynewt-nimble/nimble/porting/
 

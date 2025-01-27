@@ -24,6 +24,7 @@ class NimBLEConnectionManager:
         self.connections = {}
         self.current_conn = None
         self.connection_handle = None 
+        self.vendor_mode = False  # Track if we're in raw PHY mode
         self.NORDIC_LE_OPCODE = 0xFD01
         self.vendor_ops = {'nordic': {'disable_crc': 0x01, 'disable_whiten': 0x02}}
 
@@ -95,17 +96,14 @@ class NimBLEConnectionManager:
                 
     def l2cap_send_raw(self, conn, pkt):
         """
-        Send raw L2CAP packet via ACL using Scapy's stack.
+        Fuzzer ACL path for L2CAP/ATT/SMP
         
         :param conn: Connection object
         :param pkt: Scapy L2CAP packet
         """
-        acl = HCI_Hdr(type=2) / HCI_ACL_Hdr(
-            handle=conn['handle'],
-            PB=0x02,  # Continuation fragment
-            BC=0x00
-        ) / pkt
-        self.socket.send(acl)
+        cmd = HCI_Hdr(type=2)/HCI_ACL_Hdr(handle=conn['handle'])/pkt
+        self.send_hci_command(cmd)
+        time.sleep(0.001)  # Maintain packet timing
 
     def att_send_raw(self, conn, pkt):
         """
@@ -169,17 +167,13 @@ class NimBLEConnectionManager:
         self._send_vendor_hci('nordic', 'disable_whiten', params)
 
     def ll_send_raw(self, pdu, disable_crc=False, disable_whiten=False):
-        """Send raw LL PDU using vendor command"""
+        """Vendor-specific raw PHY access"""
+        self.vendor_mode = True
         flags = 0
         if disable_crc: flags |= 0x01
         if disable_whiten: flags |= 0x02
         
         params = struct.pack('<BH', flags, len(pdu)) + bytes(pdu)
         cmd = HCI_Hdr(type=1)/HCI_Command_Hdr(opcode=0xFD01)/Raw(params)
-        self.nordic_disable_crc()
-        self.nordic_disable_whiten()
         self.send_hci_command(cmd)
-        # re-enable for other packets
-        self.nordic_disable_crc(disabled=False)
-        self.nordic_disable_whiten(disabled=False)
-    
+        self.vendor_mode = False
