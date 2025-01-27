@@ -12,6 +12,6 @@ repository.apache-mynewt-core:
   repo: mynewt-core
 
 repository.apache-mynewt-nimble:
-    type: local
-    vers: 0-latest
-    url: repos/apache-mynewt-nimble
+  type: local
+  vers: 0-latest
+  url: repos/apache-mynewt-nimble
