@@ -43,22 +43,32 @@ jobs:
     - name: setup mynewt
       run: |
         cd $GITHUB_WORKSPACE/mynewt
-        # setup dep resolution from project.yml
+        # dep resolution from project.yml
         newt upgrade
 
     - name: Build Fuzzing Firmware
       run: |
         cd $GITHUB_WORKSPACE/mynewt
+        # Create bootloader target first
+        newt target create nrf52_boot
+        newt target set nrf52_boot app=@mcuboot/boot/mynewt
+        newt target set nrf52_boot bsp=@apache-mynewt-core/hw/bsp/nordic_pca10040
+        newt target set nrf52_boot build_profile=optimized
+
         newt target create nrf52_fuzzer
         # main app
         newt target set nrf52_fuzzer app=@apache-mynewt-nimble/apps/blehci
         newt target set nrf52_fuzzer bsp=@apache-mynewt-core/hw/bsp/nrf52dk
         newt target set nrf52_fuzzer build_profile=optimized
         newt target set nrf52_fuzzer syscfg=BLE_LL_FUZZ_NRF52=1:BLE_PHY_DIRECT_TX=1
+        
+        # Build both targets
+        newt build nrf52_boot
         newt build nrf52_fuzzer
         newt create-image nrf52_fuzzer 1.0.0
+
         newt obj copy nrf52_fuzzer firmware.elf
-        mv firmware.elf ../
+        mv nrf52_firmware.elf ../
         cd ../
 
     - name: Upload Firmware Artifact
@@ -66,5 +76,4 @@ jobs:
       with:
         name: ble-fuzzer-firmware
         path: |
-          firmware.elf
-          repos/apache-mynewt-nimble/bin/nrf52_fuzzer/*
+          nrf52_firmware.elf
