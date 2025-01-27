@@ -32,24 +32,21 @@ jobs:
       with:
         repository: apache/mynewt-nimble
         path: repos/apache-mynewt-nimble
+        ref: nimble_1_8_0_tag
     
     - name: Add Fuzzing Source code
       run: |
-        cp -rf mynewt-nimble/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
-        cp -rf mynewt-nimble/nimble/transport/* repos/apache-mynewt-nimble/nimble/transport/
-        cp -rf mynewt-nimble/nimble/porting/nrf5x repos/apache-mynewt-nimble/nimble/porting/
+        cp -rf mynewt/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
+        cp -rf mynewt/nimble/transport/* repos/apache-mynewt-nimble/nimble/transport/
+        cp -rf mynewt/nimble/porting/nrf5x repos/apache-mynewt-nimble/nimble/porting/
    
     - name: setup mynewt
       run: |
         # Initialize a Mynewt project
         newt new mynewt-fuzzer
         cd mynewt-fuzzer
-
-        # Add repositories to the project
-        newt repo add apache-mynewt-core ../repos/apache-mynewt-core
-        newt repo add apache-mynewt-nimble ../repos/apache-mynewt-nimble
-        newt pkg install -v apache-mynewt-core
-        newt pkg install -v apache-mynewt-nimble
+        # setup dep resolution from project.yml
+        newt upgrade
 
     - name: Build Fuzzing Firmware
       run: |

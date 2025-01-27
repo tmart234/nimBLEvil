@@ -1,0 +1,17 @@
+# mynewt/project.yml
+project.name: "ble_fuzzer"
+
+project.repositories:
+  - apache-mynewt-core
+  - apache-mynewt-nimble
+
+repository.apache-mynewt-core:
+  type: github
+  vers: 1-latest
+  user: apache
+  repo: mynewt-core
+
+repository.apache-mynewt-nimble:
+    type: local
+    vers: 0-latest
+    url: repos/apache-mynewt-nimble

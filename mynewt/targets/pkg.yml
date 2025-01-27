@@ -1,4 +1,4 @@
-pkg.name: targets/fuzz_test
+pkg.name: targets/nrf52_fuzzer
 pkg.deps:
   - "@apache-mynewt-core/hw/bsp/your_board"
   - "@apache-mynewt-core/kernel/os"
@@ -11,3 +11,5 @@ pkg.deps:
    # board Specific
   - "@apache-mynewt-core/hw/bsp/nrf52dk"
   - "@apache-mynewt-nimble/nimble/porting/nrf5x"
+  - "@ble-fuzz-mod/controller"
+  - "@ble-fuzz-mod/transport"
