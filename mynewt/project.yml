@@ -1,5 +1,5 @@
 # mynewt/project.yml
-project.name: "ble_fuzzer"
+project.name: "nrf52_fuzzer"
 
 project.repositories:
   - apache-mynewt-core

@@ -42,15 +42,15 @@ jobs:
    
     - name: setup mynewt
       run: |
-        # Initialize a Mynewt project
-        newt new mynewt-fuzzer
-        cd mynewt-fuzzer
+        cd $GITHUB_WORKSPACE/mynewt
         # setup dep resolution from project.yml
         newt upgrade
 
     - name: Build Fuzzing Firmware
       run: |
+        cd $GITHUB_WORKSPACE/mynewt
         newt target create nrf52_fuzzer
+        # main app
         newt target set nrf52_fuzzer app=@apache-mynewt-nimble/apps/blehci
         newt target set nrf52_fuzzer bsp=@apache-mynewt-core/hw/bsp/nrf52dk
         newt target set nrf52_fuzzer build_profile=optimized
