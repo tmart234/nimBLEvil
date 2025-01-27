@@ -27,18 +27,12 @@ jobs:
         newt version
         cd ..
 
-    - name: Initialize Mynewt Core
-      run: |
-        newt install -f -v apache-mynewt-core
-        # Verify installation location
-        ls -l repos/apache-mynewt-core
-        
     - name: Checkout NimBLE
       uses: actions/checkout@v4
       with:
         repository: apache/mynewt-nimble
         path: repos/apache-mynewt-nimble
-
+    
     - name: Add Fuzzing Source code
       run: |
         cp -rf mynewt-nimble/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
@@ -54,7 +48,8 @@ jobs:
         # Add repositories to the project
         newt repo add apache-mynewt-core ../repos/apache-mynewt-core
         newt repo add apache-mynewt-nimble ../repos/apache-mynewt-nimble
-        newt install -v -f
+        newt pkg install -v apache-mynewt-core
+        newt pkg install -v apache-mynewt-nimble
 
     - name: Build Fuzzing Firmware
       run: |
