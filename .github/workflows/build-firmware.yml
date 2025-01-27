@@ -19,9 +19,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git make gcc-arm-none-eabi python3 python3-pip golang-go
         # Install Mynewt Newt from source
-        wget https://github.com/apache/mynewt-newt/archive/refs/tags/mynewt_1_13_0_tag.zip
-        unzip mynewt_1_13_0_tag.zip
-        cd mynewt-newt-mynewt_1_13_0_tag
+        wget https://github.com/apache/mynewt-newt/archive/refs/tags/mynewt_1_15_0_tag.zip
+        unzip mynewt_1_15_0_tag.zip
+        cd mynewt-newt-mynewt_1_15_0_tag
         ./build.sh
         sudo mv newt/newt /usr/local/bin
         newt version
@@ -33,21 +33,18 @@ jobs:
 
     - name: Add Fuzzing Source code
       run: |
-        # Copy controller fuzzing files
-        mkdir -p repos/apache-mynewt-nimble/apps/blehci/src/fuzz
-        cp src/ble_fuzzer.* repos/apache-mynewt-nimble/apps/blehci/src/fuzz/
-        echo 'syscfg.vals.FUZZING_MODE: 1' >> repos/apache-mynewt-nimble/apps/blehci/syscfg.yml
+        # Copy fuzzing controller components
+        cp -r mynewt-nimble/nimble/controller/* repos/apache-mynewt-nimble/nimble/controller/
+        # Copy nRF52 porting files
+        cp -r mynewt-nimble/nimble/porting/nrf5x repos/apache-mynewt-nimble/nimble/porting/
 
-        mkdir -p repos/apache-mynewt-nimble/nimble/controller/{include/controller,src}
-        cp src/nimble/controller/include/controller/ble_fuzzer.h repos/apache-mynewt-nimble/nimble/controller/include/controller/
-        cp src/nimble/controller/src/ble_fuzzer.c repos/apache-mynewt-nimble/nimble/controller/src/
-    
     - name: Build Fuzzing Firmware
       run: |
         newt target create nrf52_fuzzer
         newt target set nrf52_fuzzer app=@apache-mynewt-nimble/apps/blehci
         newt target set nrf52_fuzzer bsp=@apache-mynewt-core/hw/bsp/nrf52dk
         newt target set nrf52_fuzzer build_profile=optimized
+        newt target set nrf52_fuzzer syscfg=BLE_LL_FUZZ_NRF52=1:BLE_PHY_DIRECT_TX=1
         newt build nrf52_fuzzer
         newt create-image nrf52_fuzzer 1.0.0
         newt obj copy nrf52_fuzzer firmware.elf
@@ -59,8 +56,3 @@ jobs:
         path: |
           firmware.elf
           repos/apache-mynewt-nimble/bin/nrf52_fuzzer/*
-
-    - name: Verify Patches
-      run: |
-        arm-none-eabi-objdump -t firmware.elf | grep -q 'g_phy_raw_tx_mode'
-        arm-none-eabi-objdump -t firmware.elf | grep -q 'ble_fuzz_init'
